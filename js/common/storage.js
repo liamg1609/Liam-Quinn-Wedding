@@ -5,8 +5,28 @@ export const storage = (table) => {
      * @returns {any}
      */
     const get = (key = null) => {
-        const data = JSON.parse(localStorage.getItem(table));
-        return key ? data[String(key)] : data;
+        try {
+            const item = localStorage.getItem(table);
+            if (!item) {
+                return key ? undefined : {};
+            }
+            
+            const data = JSON.parse(item);
+            
+            // Validate that data is an object, not a string or other primitive
+            if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+                // Invalid data, reset to empty object
+                localStorage.setItem(table, '{}');
+                return key ? undefined : {};
+            }
+            
+            return key ? data[String(key)] : data;
+        } catch (error) {
+            // JSON parse error, reset to empty object
+            console.warn(`Invalid JSON in localStorage for key "${table}", resetting...`);
+            localStorage.setItem(table, '{}');
+            return key ? undefined : {};
+        }
     };
 
     /**
