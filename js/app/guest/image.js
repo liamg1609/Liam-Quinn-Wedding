@@ -65,18 +65,24 @@ export const image = (() => {
      * @returns {void}
      */
     const getByDefault = (el) => {
+        // Check if image is already loaded (cached)
+        if (el.complete && el.naturalWidth !== 0 && el.naturalHeight !== 0) {
+            el.width = el.naturalWidth;
+            el.height = el.naturalHeight;
+            progress.complete('image');
+            return; // Exit early to prevent duplicate progress tracking
+        } else if (el.complete) {
+            progress.invalid('image');
+            return;
+        }
+
+        // Set up listeners only if image is not yet loaded
         el.onerror = () => progress.invalid('image');
         el.onload = () => {
             el.width = el.naturalWidth;
             el.height = el.naturalHeight;
             progress.complete('image');
         };
-
-        if (el.complete && el.naturalWidth !== 0 && el.naturalHeight !== 0) {
-            progress.complete('image');
-        } else if (el.complete) {
-            progress.invalid('image');
-        }
     };
 
     /**

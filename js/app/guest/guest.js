@@ -259,8 +259,8 @@ export const guest = (() => {
         const data = new URLSearchParams({
             action: 'TEMPLATE',
             text: 'The Wedding of Gia Hiếu & Như Quỳnh',
-            dates: `${formatDate('2026-01-03 17:00')}/${formatDate('2026-01-03 21:00')}`,
-            details: 'Với tất cả sự trân trọng, chúng tôi trân trọng kính mời quý vị đến dự lễ cưới của chúng tôi',
+            dates: `${formatDate('2026-01-04 00:30')}/${formatDate('2026-01-04 04:00')}`,
+            details: 'The Wedding of Gia Hiếu & Như Quỳnh - Sự góp mặt của Quý Khách sẽ là lời chúc phúc ý nghĩa và quý giá nhất đối với gia đình chúng tôi!',
             location: 'Trung tâm Tiệc cưới & Hội nghị Golden Palace - 04-06 Nguyễn Ái Quốc, Tân Mai, Biên Hòa, Đồng Nai, Việt Nam',
             ctz: 'Asia/Ho_Chi_Minh',
         });

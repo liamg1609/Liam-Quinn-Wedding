@@ -12,9 +12,74 @@ Untuk kamu yang ingin melihat demo terlebih dahulu:
 
 [https://ulems.my.id/?to=Teman teman semua](https://ulems.my.id/?to=Teman%20teman%20semua)
 
+## 🚀 Quick Start (Local Development)
+
+### Cách 1: Sử dụng esbuild dev server (Khuyên dùng)
+```bash
+# Cài đặt dependencies
+npm install
+
+# Chạy development server
+npm run dev
+
+# Mở browser và truy cập: http://localhost:8080
+```
+
+### Cách 2: Sử dụng Python HTTP server
+```bash
+# Cài đặt dependencies
+npm install
+
+# Build project
+npm run build
+
+# Chạy HTTP server
+python3 -m http.server 8080
+
+# Mở browser và truy cập: http://localhost:8080
+```
+
+### Cách 3: Sử dụng Node.js HTTP server
+```bash
+# Cài đặt dependencies
+npm install
+
+# Build project
+npm run build
+
+# Chạy HTTP server
+npx http-server -p 8080
+
+# Mở browser và truy cập: http://localhost:8080
+```
+
+## 🔧 Troubleshooting
+
+### Lỗi "This page isn't working"
+- **Nguyên nhân:** Server không khởi động được
+- **Giải pháp:** Thử cách 2 hoặc 3 ở trên, hoặc kiểm tra port 8080 có bị chiếm không
+
+### Lỗi JSON Parse Error
+```
+Uncaught SyntaxError: Unexpected token 'd', "dark" is not valid JSON
+```
+- **Nguyên nhân:** localStorage chứa data cũ
+- **Giải pháp:** Mở Developer Console (F12) và gõ: `localStorage.clear()`, sau đó refresh trang
+
+### Port 8080 đã được sử dụng
+```bash
+# Tìm process đang dùng port 8080
+lsof -i :8080
+
+# Kill process (thay PID bằng số thực tế)
+kill -9 PID
+
+# Hoặc dùng port khác
+python3 -m http.server 3000
+```
+
 ## 📦 Documentation
 
-* Jalankan perintah `npm install`, lalu `npm run dev`, dan buka `http://localhost:8080`.
 * Ubah isi file `index.html` sesuai keinginanmu.
 * Jika tidak ingin menggunakan **fitur komentar**, hapus atribut `data-url` dan `data-key` di elemen `<body>` pada index.html.
 * Sesuaikan `data-url` pada `<body>` di index dan dashboard sesuai dengan URL backend (jika kamu meng-hosting sendiri).
