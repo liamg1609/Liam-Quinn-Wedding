@@ -328,10 +328,7 @@ export const guest = (() => {
         config = storage('config');
         information = storage('information');
 
-        const vid = video.init();
         const img = image.init();
-        const aud = audio.init();
-        const lib = loaderLibs();
         const token = document.body.getAttribute('data-key');
         const params = new URLSearchParams(window.location.search);
 
@@ -346,14 +343,22 @@ export const guest = (() => {
             document.getElementById('comment')?.remove();
             document.querySelector('a.nav-link[href="#comment"]')?.closest('li.nav-item')?.remove();
 
-            // Load priority images (Welcome Page) first, then load other images
+            // Load priority images (Welcome Page) first
+            // Only priority images are counted in progress initially
             img.loadPriorityImages().then(() => {
+                // After priority images load, init and load other assets
+                const vid = video.init();
+                const aud = audio.init();
+                const lib = loaderLibs();
                 vid.load();
                 img.load();
                 aud.load();
                 lib.load({ confetti: document.body.getAttribute('data-confetti') === 'true' });
             }).catch(() => {
                 // If priority images fail, still continue with other assets
+                const vid = video.init();
+                const aud = audio.init();
+                const lib = loaderLibs();
                 vid.load();
                 img.load();
                 aud.load();
@@ -362,39 +367,75 @@ export const guest = (() => {
         }
 
         if (token && token.length > 0) {
-            // add 2 progress for config and comment.
-            // before img.load();
-            progress.add();
-            progress.add();
-
             // Load priority images first
-            img.loadPriorityImages();
+            img.loadPriorityImages().then(() => {
+                // After priority images load, add config and comment to progress
+                progress.add();
+                progress.add();
 
-            // if don't have data-src.
-            if (!img.hasDataSrc()) {
-                img.load();
-            }
-
-            // fetch after document is loaded.
-            const load = () => session.guest(params.get('k') ?? token).then(({ data }) => {
-                document.dispatchEvent(new Event('undangan.session'));
-                progress.complete('config');
-
-                if (img.hasDataSrc()) {
+                // if don't have data-src.
+                if (!img.hasDataSrc()) {
                     img.load();
                 }
 
-                vid.load();
-                aud.load();
-                lib.load({ confetti: data.is_confetti_animation });
+                // fetch after document is loaded.
+                const load = () => session.guest(params.get('k') ?? token).then(({ data }) => {
+                    document.dispatchEvent(new Event('undangan.session'));
+                    progress.complete('config');
 
-                comment.show()
-                    .then(() => progress.complete('comment'))
-                    .catch(() => progress.invalid('comment'));
+                    // Init and load other assets after priority images
+                    const vid = video.init();
+                    const aud = audio.init();
+                    const lib = loaderLibs();
 
-            }).catch(() => progress.invalid('config'));
+                    if (img.hasDataSrc()) {
+                        img.load();
+                    }
 
-            window.addEventListener('load', load);
+                    vid.load();
+                    aud.load();
+                    lib.load({ confetti: data.is_confetti_animation });
+
+                    comment.show()
+                        .then(() => progress.complete('comment'))
+                        .catch(() => progress.invalid('comment'));
+
+                }).catch(() => progress.invalid('config'));
+
+                window.addEventListener('load', load);
+            }).catch(() => {
+                // If priority images fail, still continue
+                progress.add();
+                progress.add();
+
+                if (!img.hasDataSrc()) {
+                    img.load();
+                }
+
+                const load = () => session.guest(params.get('k') ?? token).then(({ data }) => {
+                    document.dispatchEvent(new Event('undangan.session'));
+                    progress.complete('config');
+
+                    const vid = video.init();
+                    const aud = audio.init();
+                    const lib = loaderLibs();
+
+                    if (img.hasDataSrc()) {
+                        img.load();
+                    }
+
+                    vid.load();
+                    aud.load();
+                    lib.load({ confetti: data.is_confetti_animation });
+
+                    comment.show()
+                        .then(() => progress.complete('comment'))
+                        .catch(() => progress.invalid('comment'));
+
+                }).catch(() => progress.invalid('config'));
+
+                window.addEventListener('load', load);
+            });
         }
     };
 

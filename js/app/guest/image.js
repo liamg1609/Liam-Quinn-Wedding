@@ -14,6 +14,7 @@ export const image = (() => {
     let c = null;
 
     let hasSrc = false;
+    let nonPriorityImagesCounted = false;
 
     /**
      * @type {object[]}
@@ -139,6 +140,12 @@ export const image = (() => {
     const load = async () => {
         const arrImages = Array.from(images).filter((el) => el.getAttribute('data-priority') !== 'welcome');
 
+        // Count remaining images for progress tracking (only once)
+        if (!nonPriorityImagesCounted) {
+            arrImages.forEach(progress.add);
+            nonPriorityImagesCounted = true;
+        }
+
         arrImages.filter((el) => el.getAttribute('data-fetch-img') !== 'high').forEach((el) => {
             el.hasAttribute('data-src') ? getByFetch(el) : getByDefault(el);
         });
@@ -169,8 +176,11 @@ export const image = (() => {
         c = cache('image').withForceCache();
         images = document.querySelectorAll('img');
 
-        // Count all images for progress tracking
-        images.forEach(progress.add);
+        // Only count priority images for initial progress tracking
+        // Other images will be counted when load() is called
+        const priorityImages = Array.from(images).filter((i) => i.getAttribute('data-priority') === 'welcome');
+        priorityImages.forEach(progress.add);
+        
         hasSrc = Array.from(images).some((i) => i.hasAttribute('data-src'));
 
         return {
