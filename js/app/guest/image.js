@@ -91,10 +91,53 @@ export const image = (() => {
     const hasDataSrc = () => hasSrc;
 
     /**
+     * Load priority images (Welcome Page images) first
+     * @returns {Promise<void>}
+     */
+    const loadPriorityImages = async () => {
+        const priorityImages = Array.from(images).filter((el) => el.getAttribute('data-priority') === 'welcome');
+        
+        if (priorityImages.length === 0) {
+            return;
+        }
+
+        await c.open();
+        
+        const priorityPromises = priorityImages.map((el) => {
+            if (el.hasAttribute('data-src')) {
+                const src = el.getAttribute('data-src');
+                if (el.getAttribute('data-fetch-img') === 'high') {
+                    return c.get(src, progress.getAbort())
+                        .then((i) => appendImage(el, i))
+                        .then(() => el.classList.remove('opacity-0'))
+                        .catch((err) => {
+                            console.error('Error loading priority image:', err);
+                            progress.invalid('image');
+                        });
+                } else {
+                    // For non-high priority images with data-src, load directly
+                    return c.get(src, progress.getAbort())
+                        .then((i) => appendImage(el, i))
+                        .catch((err) => {
+                            console.error('Error loading priority image:', err);
+                            progress.invalid('image');
+                        });
+                }
+            } else {
+                // For images without data-src, use default loading
+                getByDefault(el);
+                return Promise.resolve();
+            }
+        });
+
+        await Promise.allSettled(priorityPromises);
+    };
+
+    /**
      * @returns {Promise<void>}
      */
     const load = async () => {
-        const arrImages = Array.from(images);
+        const arrImages = Array.from(images).filter((el) => el.getAttribute('data-priority') !== 'welcome');
 
         arrImages.filter((el) => el.getAttribute('data-fetch-img') !== 'high').forEach((el) => {
             el.hasAttribute('data-src') ? getByFetch(el) : getByDefault(el);
@@ -126,11 +169,13 @@ export const image = (() => {
         c = cache('image').withForceCache();
         images = document.querySelectorAll('img');
 
+        // Count all images for progress tracking
         images.forEach(progress.add);
         hasSrc = Array.from(images).some((i) => i.hasAttribute('data-src'));
 
         return {
             load,
+            loadPriorityImages,
             download,
             hasDataSrc,
         };

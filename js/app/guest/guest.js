@@ -346,10 +346,19 @@ export const guest = (() => {
             document.getElementById('comment')?.remove();
             document.querySelector('a.nav-link[href="#comment"]')?.closest('li.nav-item')?.remove();
 
-            vid.load();
-            img.load();
-            aud.load();
-            lib.load({ confetti: document.body.getAttribute('data-confetti') === 'true' });
+            // Load priority images (Welcome Page) first, then load other images
+            img.loadPriorityImages().then(() => {
+                vid.load();
+                img.load();
+                aud.load();
+                lib.load({ confetti: document.body.getAttribute('data-confetti') === 'true' });
+            }).catch(() => {
+                // If priority images fail, still continue with other assets
+                vid.load();
+                img.load();
+                aud.load();
+                lib.load({ confetti: document.body.getAttribute('data-confetti') === 'true' });
+            });
         }
 
         if (token && token.length > 0) {
@@ -357,6 +366,9 @@ export const guest = (() => {
             // before img.load();
             progress.add();
             progress.add();
+
+            // Load priority images first
+            img.loadPriorityImages();
 
             // if don't have data-src.
             if (!img.hasDataSrc()) {
