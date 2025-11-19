@@ -92,10 +92,45 @@ export const image = (() => {
     const hasDataSrc = () => hasSrc;
 
     /**
+     * Load a single priority image
+     * @param {HTMLImageElement} el 
+     * @returns {Promise<void>}
+     */
+    const loadSinglePriorityImage = async (el) => {
+        if (el.hasAttribute('data-src')) {
+            const src = el.getAttribute('data-src');
+            if (el.getAttribute('data-fetch-img') === 'high') {
+                try {
+                    const i = await c.get(src, progress.getAbort());
+                    await appendImage(el, i);
+                    el.classList.remove('opacity-0');
+                } catch (err) {
+                    console.error('Error loading priority image:', err);
+                    progress.invalid('image');
+                }
+            } else {
+                // For non-high priority images with data-src, load directly
+                try {
+                    const i = await c.get(src, progress.getAbort());
+                    await appendImage(el, i);
+                } catch (err) {
+                    console.error('Error loading priority image:', err);
+                    progress.invalid('image');
+                }
+            }
+        } else {
+            // For images without data-src, use default loading
+            getByDefault(el);
+        }
+    };
+
+    /**
      * Load priority images (Welcome Page images) first
+     * querySelectorAll already returns images in DOM order (top to bottom)
      * @returns {Promise<void>}
      */
     const loadPriorityImages = async () => {
+        // querySelectorAll returns NodeList in DOM order, filter preserves order
         const priorityImages = Array.from(images).filter((el) => el.getAttribute('data-priority') === 'welcome');
         
         if (priorityImages.length === 0) {
@@ -104,40 +139,50 @@ export const image = (() => {
 
         await c.open();
         
-        const priorityPromises = priorityImages.map((el) => {
-            if (el.hasAttribute('data-src')) {
-                const src = el.getAttribute('data-src');
-                if (el.getAttribute('data-fetch-img') === 'high') {
-                    return c.get(src, progress.getAbort())
-                        .then((i) => appendImage(el, i))
-                        .then(() => el.classList.remove('opacity-0'))
-                        .catch((err) => {
-                            console.error('Error loading priority image:', err);
-                            progress.invalid('image');
-                        });
-                } else {
-                    // For non-high priority images with data-src, load directly
-                    return c.get(src, progress.getAbort())
-                        .then((i) => appendImage(el, i))
-                        .catch((err) => {
-                            console.error('Error loading priority image:', err);
-                            progress.invalid('image');
-                        });
-                }
-            } else {
-                // For images without data-src, use default loading
-                getByDefault(el);
-                return Promise.resolve();
-            }
-        });
+        // Load images sequentially (one after another) in DOM order
+        for (const el of priorityImages) {
+            await loadSinglePriorityImage(el);
+        }
+    };
 
-        await Promise.allSettled(priorityPromises);
+    /**
+     * Load a single non-priority image
+     * @param {HTMLImageElement} el 
+     * @returns {Promise<void>}
+     */
+    const loadSingleImage = async (el) => {
+        if (el.getAttribute('data-fetch-img') === 'high') {
+            // High priority images with data-fetch-img="high"
+            try {
+                const src = el.getAttribute('data-src');
+                const i = await c.get(src, progress.getAbort());
+                await appendImage(el, i);
+                el.classList.remove('opacity-0');
+            } catch (err) {
+                console.error('Error loading image:', err);
+                progress.invalid('image');
+            }
+        } else if (el.hasAttribute('data-src')) {
+            // Images with data-src but not high priority - load directly in sequence
+            try {
+                const src = el.getAttribute('data-src');
+                const i = await c.get(src, progress.getAbort());
+                await appendImage(el, i);
+            } catch (err) {
+                console.error('Error loading image:', err);
+                progress.invalid('image');
+            }
+        } else {
+            // Images without data-src - use default loading
+            getByDefault(el);
+        }
     };
 
     /**
      * @returns {Promise<void>}
      */
     const load = async () => {
+        // querySelectorAll returns NodeList in DOM order, filter preserves order
         const arrImages = Array.from(images).filter((el) => el.getAttribute('data-priority') !== 'welcome');
 
         // Count remaining images for progress tracking (only once)
@@ -146,21 +191,23 @@ export const image = (() => {
             nonPriorityImagesCounted = true;
         }
 
-        arrImages.filter((el) => el.getAttribute('data-fetch-img') !== 'high').forEach((el) => {
-            el.hasAttribute('data-src') ? getByFetch(el) : getByDefault(el);
-        });
-
         if (!hasSrc) {
+            // If no data-src images, just load default images sequentially
+            for (const el of arrImages) {
+                if (!el.hasAttribute('data-src')) {
+                    getByDefault(el);
+                }
+            }
             return;
         }
 
         await c.open();
-        await Promise.allSettled(arrImages.filter((el) => el.getAttribute('data-fetch-img') === 'high').map((el) => {
-            return c.get(el.getAttribute('data-src'), progress.getAbort())
-                .then((i) => appendImage(el, i))
-                .then(() => el.classList.remove('opacity-0'));
-        }));
-        await c.run(urlCache, progress.getAbort());
+
+        // Load all images sequentially in DOM order (top to bottom)
+        // Array.from() and filter() preserve the DOM order from querySelectorAll
+        for (const el of arrImages) {
+            await loadSingleImage(el);
+        }
     };
 
     /**
