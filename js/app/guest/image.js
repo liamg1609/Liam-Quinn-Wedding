@@ -38,8 +38,11 @@ export const image = (() => {
      * @returns {Promise<void>}
      */
     const appendImage = (el, src) => loadedImage(src).then((img) => {
-        el.width = img.naturalWidth;
-        el.height = img.naturalHeight;
+        // Preserve custom width/height if element has data-fixed-size attribute
+        if (!el.hasAttribute('data-fixed-size')) {
+            el.width = img.naturalWidth;
+            el.height = img.naturalHeight;
+        }
         el.src = img.src;
         img.remove();
 

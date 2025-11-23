@@ -113,3 +113,8 @@ svg {
 .no-gap-bottom {
     margin-bottom: -0.75rem !important;
 }
+
+/* White background for images with data-src (lazy loading) */
+img[data-src] {
+    background-color: white;
+}
