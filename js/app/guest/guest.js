@@ -89,6 +89,29 @@ export const guest = (() => {
     };
 
     /**
+     * @returns {void}
+     */
+    const updateWeGotMarried = () => {
+        const params = new URLSearchParams(window.location.search);
+        const name = params.get('name');
+
+        if (name) {
+            const element = document.getElementById('we-got-married');
+            if (element) {
+                element.textContent = util.escapeHtml(name);
+            } else {
+                // Retry after a short delay if element doesn't exist yet
+                util.timeOut(() => {
+                    const retryElement = document.getElementById('we-got-married');
+                    if (retryElement) {
+                        retryElement.textContent = util.escapeHtml(name);
+                    }
+                }, 100);
+            }
+        }
+    };
+
+    /**
      * @returns {Promise<void>}
      */
     const slide = async () => {
@@ -165,6 +188,7 @@ export const guest = (() => {
             document.getElementById('button-theme').classList.remove('d-none');
         }
 
+        updateWeGotMarried();
         slide();
         theme.spyTop();
 
@@ -327,6 +351,9 @@ export const guest = (() => {
 
         config = storage('config');
         information = storage('information');
+
+        // Update "We got married" text early if URL parameter exists
+        updateWeGotMarried();
 
         const img = image.init();
         const token = document.body.getAttribute('data-key');
